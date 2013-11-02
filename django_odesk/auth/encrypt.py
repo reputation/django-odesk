@@ -38,5 +38,3 @@ def decrypt_token(key, encrypted):
     tok = aes.decrypt(encrypted)
     token = restore_val(tok)
     return token
-
-

@@ -11,6 +11,7 @@ from django_odesk.conf import settings
 # installed. That is why we use ODESK_CUSTOM_USER_MODEL, which is set to None
 # by default
 
+
 def get_user_model():
     custom_model = settings.ODESK_CUSTOM_USER_MODEL
     if not custom_model:
@@ -18,6 +19,7 @@ def get_user_model():
     app_label, model_name = custom_model.split('.')
     model = models.get_model(app_label, model_name)
     if model is None:
-        raise ImproperlyConfigured('Unable to load the user model' +\
-                    'check ODESK_CUSTOM_USER_MODEL in your project settings')
+        raise ImproperlyConfigured(
+            'Unable to load the user model'
+            'check ODESK_CUSTOM_USER_MODEL in your project settings')
     return model
