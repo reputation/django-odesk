@@ -9,23 +9,23 @@ from django_odesk.auth.encrypt import decrypt_token
 
 class DefaultClient(Client):
 
-    def __init__(self, api_token=None):
+    def __init__(self, **attrs):
         public_key = settings.ODESK_PUBLIC_KEY
         secret_key = settings.ODESK_PRIVATE_KEY
         if not (public_key and secret_key):
             raise ImproperlyConfigured(
-                "The django_odesk.core.clients.DefaultClient requires "
-                "both ODESK_PUBLIC_KEY and ODESK_PRIVATE_KEY "
+                "The django_odesk.core.clients.DefaultClient requires "+\
+                "both ODESK_PUBLIC_KEY and ODESK_PRIVATE_KEY "+\
                 "settings to be specified.")
-        super(DefaultClient, self).__init__(public_key, secret_key, api_token)
 
+        client_kwargs = {
+            'oauth_access_token': attrs.pop('oauth_access_token', None),
+            'oauth_access_token_secret': attrs.pop(
+                'oauth_access_token_secret', None)
+        }
+        super(DefaultClient, self).__init__(
+            public_key, secret_key, **client_kwargs
+        )
 
-class RequestClient(DefaultClient):
-
-    def __init__(self, request):
-        encryption_key = request.COOKIES.get(ENCRYPTION_KEY_NAME, None)
-        encrypted_token = request.session.get(ODESK_TOKEN_SESSION_KEY, None)
-        api_token = None
-        if encryption_key and encrypted_token:
-            api_token = decrypt_token(encryption_key, encrypted_token)
-        super(RequestClient, self).__init__(api_token)
+        for key, value in attrs.items():
+            setattr(self.auth, key, value)

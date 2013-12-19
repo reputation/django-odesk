@@ -1,4 +1,7 @@
-from distutils.core import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
 version = __import__('django_odesk').get_version()
 
@@ -8,6 +11,7 @@ setup(name='django-odesk',
       long_description='',
       author='Oleksiy Solyanyk, Volodymyr Hotsyk',
       author_email='gotsyk@gmail.com',
+      test_suite='django_odesk.tests',
       packages=['django_odesk',
                 'django_odesk.auth',
                 'django_odesk.core',
