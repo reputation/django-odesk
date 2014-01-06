@@ -5,7 +5,6 @@ from django.http import HttpResponseRedirect
 from django.contrib.auth import authenticate as django_authenticate
 from django.contrib.auth import get_backends
 from django.contrib.auth import login, REDIRECT_FIELD_NAME
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
 
 from django_odesk.core.clients import DefaultClient
@@ -47,7 +46,7 @@ def callback(request, redirect_url=None):
             )
             user_info = client.auth.get_info()
             user_uid = user_info['auth_user']['uid']
-        except Exception, exc:
+        except Exception as exc:
             msg = "get_access_token({0}) failed with {1}, {2}".format(
                 oauth_verifier, exc, request)
             logging.error(msg, exc_info=True)
@@ -55,33 +54,49 @@ def callback(request, redirect_url=None):
 
         if not settings.ODESK_AUTH_ONLY:
             if settings.ODESK_ENCRYPT_API_TOKEN:
-                encryption_key, encrypted_token = encrypt_token(oauth_access_token)
+                encryption_key, encrypted_token = encrypt_token(
+                    oauth_access_token)
                 put_in_session = encrypted_token
             else:
                 put_in_session = oauth_access_token
             request.session[ODESK_TOKEN_SESSION_KEY] = put_in_session
 
         user = django_authenticate(token=oauth_access_token)
-        if user:
+        if not user is None:
             login(request, user)
         else:
             email = user_info.get('auth_user', {}).get('mail')
+            fname = user_info.get('auth_user', {}).get('first_name')
+            lname = user_info.get('auth_user', {}).get('last_name')
             if email:
-                user, created = User.objects.get_or_create(email=email)
+                user, created = User.objects.get_or_create(username=email,
+                                                           email=email,
+                                                           first_name=fname,
+                                                           last_name=lname)
                 if user:
                     backend = get_backends()[0]
                     user.token = oauth_access_token
-                    user.backend = "%s.%s" % (backend.__module__, backend.__class__.__name__)
+                    user.backend = "%s.%s" % (backend.__module__,
+                                              backend.__class__.__name__)
                     user.save()
                     login(request, user)
-            #Probably the odesk auth backend is missing. Should we raise an error?
+
+        if user.username == getattr(settings, 'ODESK_API_USER', None):
+            request.session['access_token'] = oauth_access_token
+            request.session['access_secret'] = oauth_access_token_secret
+
         redirect_url = request.session.pop(ODESK_REDIRECT_SESSION_KEY,
                                            redirect_url)
+
         response = HttpResponseRedirect(redirect_url or '/')
         if not settings.ODESK_AUTH_ONLY and settings.ODESK_ENCRYPT_API_TOKEN:
-            expires = datetime.timedelta(hours = 2) + datetime.datetime.utcnow() # this is for Django 1.3
-            # string conversion for django 1.2 somehow doesn't work either, so I use max_age
-            response.set_cookie(ENCRYPTION_KEY_NAME, encryption_key, expires = expires, max_age = 60*60*2)
+            expires = datetime.timedelta(hours=2) + \
+                datetime.datetime.utcnow()
+
+            # string conversion for django 1.2 somehow doesn't work either,
+            # so I use max_age
+            response.set_cookie(ENCRYPTION_KEY_NAME, encryption_key,
+                                expires=expires, max_age=60*60*2)
         return response
 
     else:
