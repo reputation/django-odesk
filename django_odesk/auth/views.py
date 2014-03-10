@@ -44,8 +44,9 @@ def callback(request, redirect_url=None):
                 oauth_access_token=oauth_access_token,
                 oauth_access_token_secret=oauth_access_token_secret
             )
-            user_info = client.auth.get_info()
-            user_uid = user_info['auth_user']['uid']
+            user_info =  client.hr.get_user_me()
+            #assert 0, user_info
+            #user_uid = user_info['auth_user']['uid']
         except Exception as exc:
             msg = "get_access_token({0}) failed with {1}, {2}".format(
                 oauth_verifier, exc, request)
@@ -65,14 +66,22 @@ def callback(request, redirect_url=None):
         if not user is None:
             login(request, user)
         else:
-            email = user_info.get('auth_user', {}).get('mail')
-            fname = user_info.get('auth_user', {}).get('first_name')
-            lname = user_info.get('auth_user', {}).get('last_name')
+            email = user_info.get('email')
+            fname = user_info.get('first_name')
+            lname = user_info.get('last_name')
+
             if email:
-                user, created = User.objects.get_or_create(username=email,
+                try:
+                    user, created = User.objects.get_or_create(username=email,
                                                            email=email,
-                                                           first_name=fname,
+                                                          first_name=fname,
                                                            last_name=lname)
+                except:
+                    user, created = User.objects.get_or_create(username=email)
+                    user.first_name = fname
+                    user.username = email
+                    user.last_name = lname
+                    #user.email = email+'@aaa.com'
                 if user:
                     backend = get_backends()[0]
                     user.token = oauth_access_token
@@ -81,7 +90,7 @@ def callback(request, redirect_url=None):
                     user.save()
                     login(request, user)
 
-        if user.username == getattr(settings, 'ODESK_API_USER', None):
+        if user and user.username == getattr(settings, 'ODESK_API_USER', None):
             request.session['access_token'] = oauth_access_token
             request.session['access_secret'] = oauth_access_token_secret
 
