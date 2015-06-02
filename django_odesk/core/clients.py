@@ -1,6 +1,6 @@
 import logging
 
-from odesk import Client
+from upwork import Client
 from django.core.exceptions import ImproperlyConfigured
 from django_odesk.conf import settings
 from django_odesk.auth import ODESK_TOKEN_SESSION_KEY, ENCRYPTION_KEY_NAME
