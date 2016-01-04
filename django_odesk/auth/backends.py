@@ -138,7 +138,7 @@ class BaseModelBackend(ModelBackend):
         return user
 
     def clean_username(self, auth_user):
-        return auth_user['mail']
+        return auth_user['mail'].lower()
 
     def configure_user(self, user, auth_user):
         return user
@@ -160,7 +160,7 @@ class ModelBackend(BaseModelBackend):
     def set_user_info(self, user, auth_user):
         user.first_name = auth_user['first_name']
         user.last_name = auth_user['last_name']
-        user.email = auth_user['mail']
+        user.email = self.clean_username(auth_user)
         user.set_unusable_password()
         return user
 

@@ -66,7 +66,7 @@ def callback(request, redirect_url=None):
         if not user is None:
             login(request, user)
         else:
-            email = user_info.get('email')
+            email = user_info.get('email').lower()
             fname = user_info.get('first_name')
             lname = user_info.get('last_name')
 
