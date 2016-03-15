@@ -1,6 +1,8 @@
 
 #TODO: Annotate settings
 
+AUTH_USER_MODEL = 'accounts.User'
+
 ODESK_PUBLIC_KEY = ''
 ODESK_PRIVATE_KEY = ''
 
