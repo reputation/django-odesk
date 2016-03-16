@@ -16,7 +16,7 @@ from encrypt import encrypt_token
 
 
 def authenticate(request):
-    redirect_to = request.REQUEST.get(REDIRECT_FIELD_NAME, '')
+    redirect_to = request.GET.get(REDIRECT_FIELD_NAME, '')
     request.session[ODESK_REDIRECT_SESSION_KEY] = redirect_to
     odesk_client = DefaultClient()
     authorize_url = odesk_client.auth.get_authorize_url()
