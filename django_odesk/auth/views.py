@@ -44,9 +44,7 @@ def callback(request, redirect_url=None):
                 oauth_access_token=oauth_access_token,
                 oauth_access_token_secret=oauth_access_token_secret
             )
-            user_info =  client.hr.get_user_me()
-            #assert 0, user_info
-            #user_uid = user_info['auth_user']['uid']
+            user_info = client.hr.get_user_me()
         except Exception as exc:
             msg = "get_access_token({0}) failed with {1}, {2}".format(
                 oauth_verifier, exc, request)
@@ -62,7 +60,7 @@ def callback(request, redirect_url=None):
                 put_in_session = oauth_access_token
             request.session[ODESK_TOKEN_SESSION_KEY] = put_in_session
 
-        user = django_authenticate(token=oauth_access_token)
+        user = django_authenticate(auth_user=user_info)
         if not user is None:
             login(request, user)
         else:
@@ -73,15 +71,14 @@ def callback(request, redirect_url=None):
             if email:
                 try:
                     user, created = User.objects.get_or_create(username=email,
-                                                           email=email,
-                                                          first_name=fname,
-                                                           last_name=lname)
+                                                               email=email,
+                                                               first_name=fname,
+                                                               last_name=lname)
                 except:
                     user, created = User.objects.get_or_create(username=email)
                     user.first_name = fname
                     user.username = email
                     user.last_name = lname
-                    #user.email = email+'@aaa.com'
                 if user:
                     backend = get_backends()[0]
                     user.token = oauth_access_token

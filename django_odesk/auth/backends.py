@@ -80,19 +80,11 @@ class SimpleBackend(object):
         self.api_token = None
         self.auth_user = None
 
-    def authenticate(self, token=None):
-        client = DefaultClient(token)
-        self.client = client
-        try:
-            api_token, auth_user = client.auth.check_token()
-            self.api_token, self.auth_user = api_token, auth_user
-        except HTTPError:
-            return None
-
-        username = auth_user['mail']
+    def authenticate(self, auth_user=None):
+        username = auth_user['email']
         first_name = auth_user['first_name']
         last_name = auth_user['last_name']
-        email = auth_user['mail']
+        email = auth_user['email']
         user = OdeskUser(username, first_name, last_name, email)
         return user
 
@@ -113,15 +105,8 @@ class BaseModelBackend(ModelBackend):
         self.auth_user = None
         self.client = None
 
-    def authenticate(self, token=None):
-        client = DefaultClient(token)
-        self.client = client
-        try:
-            api_token, auth_user = client.auth.check_token()
-            self.api_token, self.auth_user = api_token, auth_user
-        except HTTPError:
-            return None
-
+    def authenticate(self, auth_user=None):
+        self.auth_user = auth_user
         user = None
         username = self.clean_username(auth_user)
         model = get_user_model()
@@ -138,7 +123,7 @@ class BaseModelBackend(ModelBackend):
         return user
 
     def clean_username(self, auth_user):
-        return auth_user['mail'].lower()
+        return auth_user['email'].lower()
 
     def configure_user(self, user, auth_user):
         return user
@@ -206,22 +191,15 @@ class TeamAuthBackend(ModelBackend):
                     "VALUES %s" % sql_values
                 )
 
-        @transaction.commit_on_success
+        @transaction.atomic
         def run_in_tx():
             clear_groups(user)
             bulk_groups_insert(user, Group.objects.filter(name__in=userteams))
 
         run_in_tx()
 
-    def authenticate(self, token=None):
-        client = DefaultClient(token)
-        self.client = client
-        try:
-            api_token, auth_user = client.auth.check_token()
-            self.api_token, self.auth_user = api_token, auth_user
-        except HTTPError:
-            return None
-
+    def authenticate(self, auth_user=None):
+        self.auth_user = auth_user
         user = None
         username = self.clean_username(auth_user)
         model = get_user_model()
