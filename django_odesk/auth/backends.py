@@ -105,25 +105,32 @@ class BaseModelBackend(ModelBackend):
         self.auth_user = None
         self.client = None
 
-    def authenticate(self, auth_user=None):
+    def authenticate(self, auth_user=None, auth_user_pk=None):
         self.auth_user = auth_user
         user = None
-        username = self.clean_username(auth_user)
         model = get_user_model()
 
-        if self.create_unknown_user:
+        if auth_user_pk:
+            try:
+                user = model.objects.get(pk=auth_user_pk)
+            except model.DoesNotExist:
+                pass
+        elif self.create_unknown_user:
+            username = self.clean_username(auth_user)
             user, created = model.objects.get_or_create(username=username)
             if created:
                 user = self.configure_user(user, auth_user)
         else:
             try:
+                username = self.clean_username(auth_user)
                 user = model.objects.get(username=username)
             except model.DoesNotExist:
                 pass
         return user
 
     def clean_username(self, auth_user):
-        return auth_user['email'].lower()
+        # Usernames cannot be more than 30 chars
+        return auth_user['email'].lower()[:30]
 
     def configure_user(self, user, auth_user):
         return user
