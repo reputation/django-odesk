@@ -64,18 +64,21 @@ def callback(request, redirect_url=None):
         if not user is None:
             login(request, user)
         else:
+            # Usernames cannot be more than 30 chars
+            username = '%s@odesk.com' % user_info.get('id').lower()[:20]
+
             email = user_info.get('email').lower()
             fname = user_info.get('first_name')
             lname = user_info.get('last_name')
 
             if email:
                 try:
-                    user, created = User.objects.get_or_create(username=email,
+                    user, created = User.objects.get_or_create(username=username,
                                                                email=email,
                                                                first_name=fname,
                                                                last_name=lname)
                 except:
-                    user, created = User.objects.get_or_create(username=email)
+                    user, created = User.objects.get_or_create(username=username)
                     user.first_name = fname
                     user.username = email
                     user.last_name = lname

@@ -130,7 +130,7 @@ class BaseModelBackend(ModelBackend):
 
     def clean_username(self, auth_user):
         # Usernames cannot be more than 30 chars
-        return auth_user['email'].lower()[:30]
+        return '%s@odesk.com' % auth_user['id'].lower()[:20]
 
     def configure_user(self, user, auth_user):
         return user
